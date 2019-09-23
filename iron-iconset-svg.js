@@ -8,11 +8,11 @@ found at http://polymer.github.io/CONTRIBUTORS.txt Code distributed by Google as
 part of the polymer project is also subject to an additional IP rights grant
 found at http://polymer.github.io/PATENTS.txt
 */
-import '@polymer/polymer/polymer-legacy.js';
 
+import {PolymerElement} from '@polymer/polymer/polymer-element.js';
 import {IronMeta} from '@polymer/iron-meta/iron-meta.js';
-import {Polymer} from '@polymer/polymer/lib/legacy/polymer-fn.js';
 import {dom} from '@polymer/polymer/lib/legacy/polymer.dom.js';
+
 /**
  * The `iron-iconset-svg` element allows users to define their own icon sets
  * that contain svg icons. The svg icon elements should be children of the
@@ -48,63 +48,63 @@ import {dom} from '@polymer/polymer/lib/legacy/polymer.dom.js';
  * @demo demo/index.html
  * @implements {Polymer.Iconset}
  */
-Polymer({
-  is: 'iron-iconset-svg',
-  /** @override */
-  _template: null,
+export class IronIconsetSvg extends PolymerElement {
 
-  properties: {
+  static get properties() {
+    return {
+      /**
+       * The name of the iconset.
+       */
+      name: {type: String, observer: '_nameChanged'},
 
-    /**
-     * The name of the iconset.
-     */
-    name: {type: String, observer: '_nameChanged'},
+      /**
+       * The size of an individual icon. Note that icons must be square.
+       */
+      size: {type: Number, value: 24},
 
-    /**
-     * The size of an individual icon. Note that icons must be square.
-     */
-    size: {type: Number, value: 24},
+      /**
+       * Set to true to enable mirroring of icons where specified when they are
+       * stamped. Icons that should be mirrored should be decorated with a
+       * `mirror-in-rtl` attribute.
+       *
+       * NOTE: For performance reasons, direction will be resolved once per
+       * document per iconset, so moving icons in and out of RTL subtrees will
+       * not cause their mirrored state to change.
+       */
+      rtlMirroring: {type: Boolean, value: false},
 
-    /**
-     * Set to true to enable mirroring of icons where specified when they are
-     * stamped. Icons that should be mirrored should be decorated with a
-     * `mirror-in-rtl` attribute.
-     *
-     * NOTE: For performance reasons, direction will be resolved once per
-     * document per iconset, so moving icons in and out of RTL subtrees will
-     * not cause their mirrored state to change.
-     */
-    rtlMirroring: {type: Boolean, value: false},
-
-    /**
-     * Set to true to measure RTL based on the dir attribute on the body or
-     * html elements (measured on document.body or document.documentElement as
-     * available).
-     */
-    useGlobalRtlAttribute: {type: Boolean, value: false}
-  },
+      /**
+       * Set to true to measure RTL based on the dir attribute on the body or
+       * html elements (measured on document.body or document.documentElement as
+       * available).
+       */
+      useGlobalRtlAttribute: {type: Boolean, value: false}
+    }
+  }
 
   /** @override */
-  created: function() {
+  constructor() {
+    super();
     this._meta = new IronMeta({type: 'iconset', key: null, value: null});
-  },
+  }
 
   /** @override */
-  attached: function() {
+  connectedCallback() {
+    super.connectedCallback();
     this.style.display = 'none';
-  },
+  }
 
   /**
    * Construct an array of all icon names in this iconset.
    *
    * @return {!Array} Array of icon names.
    */
-  getIconNames: function() {
+  getIconNames() {
     this._icons = this._createIconMap();
     return Object.keys(this._icons).map(function(n) {
       return this.name + ':' + n;
     }, this);
-  },
+  }
 
   /**
    * Applies an icon to the given element.
@@ -123,7 +123,7 @@ Polymer({
    * @param {string} iconName Name of the icon to apply.
    * @return {?Element} The svg element which renders the icon.
    */
-  applyIcon: function(element, iconName) {
+  applyIcon(element, iconName) {
     // Remove old svg element
     this.removeIcon(element);
     // install new svg element
@@ -136,7 +136,7 @@ Polymer({
       return element._svgIcon = svg;
     }
     return null;
-  },
+  }
 
   /**
    * Remove an icon from the given element by undoing the changes effected
@@ -144,20 +144,20 @@ Polymer({
    *
    * @param {Element} element The element from which the icon is removed.
    */
-  removeIcon: function(element) {
+  removeIcon(element) {
     // Remove old svg element
     if (element._svgIcon) {
       dom(element.root || element).removeChild(element._svgIcon);
       element._svgIcon = null;
     }
-  },
+  }
 
   /**
    * Measures and memoizes the direction of the element. Note that this
    * measurement is only done once and the result is memoized for future
    * invocations.
    */
-  _targetIsRTL: function(target) {
+  _targetIsRTL(target) {
     if (this.__targetIsRTL == null) {
       if (this.useGlobalRtlAttribute) {
         var globalElement =
@@ -177,29 +177,29 @@ Polymer({
     }
 
     return this.__targetIsRTL;
-  },
+  }
 
   /**
    *
    * When name is changed, register iconset metadata
    *
    */
-  _nameChanged: function() {
+  _nameChanged() {
     this._meta.value = null;
     this._meta.key = this.name;
     this._meta.value = this;
 
-    this.async(function() {
-      this.fire('iron-iconset-added', this, {node: window});
+    setTimeout(function() {
+      this.dispatchEvent(new CustomEvent('iron-iconset-added', {detail: {node: window}, bubbles: true, composed: true}));
     });
-  },
+  }
 
   /**
    * Create a map of child SVG elements by id.
    *
    * @return {!Object} Map of id's to SVG elements.
    */
-  _createIconMap: function() {
+  _createIconMap() {
     // Objects chained to Object.prototype (`{}`) have members. Specifically,
     // on FF there is a `watch` method that confuses the icon map, so we
     // need to use a null-based object here.
@@ -208,7 +208,7 @@ Polymer({
       icons[icon.id] = icon;
     });
     return icons;
-  },
+  }
 
   /**
    * Produce installable clone of the SVG element matching `id` in this
@@ -217,12 +217,12 @@ Polymer({
    * @return {Element} Returns an installable clone of the SVG element
    * matching `id`.
    */
-  _cloneIcon: function(id, mirrorAllowed) {
+  _cloneIcon(id, mirrorAllowed) {
     // create the icon map on-demand, since the iconset itself has no discrete
     // signal to know when it's children are fully parsed
     this._icons = this._icons || this._createIconMap();
     return this._prepareSvgClone(this._icons[id], this.size, mirrorAllowed);
-  },
+  }
 
   /**
    * @param {Element} sourceSvg
@@ -230,7 +230,7 @@ Polymer({
    * @param {Boolean} mirrorAllowed
    * @return {Element}
    */
-  _prepareSvgClone: function(sourceSvg, size, mirrorAllowed) {
+  _prepareSvgClone(sourceSvg, size, mirrorAllowed) {
     if (sourceSvg) {
       var content = sourceSvg.cloneNode(true),
           svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
@@ -258,4 +258,6 @@ Polymer({
     return null;
   }
 
-});
+}
+
+window.customElements.define('iron-iconset-svg', IronIconsetSvg);
